@@ -1,2 +1,4 @@
-package JarPracticeFiles;public class PerreaultJarTwo {
+package JarPracticeFiles;
+
+public class PerreaultJarTwo {
 }
