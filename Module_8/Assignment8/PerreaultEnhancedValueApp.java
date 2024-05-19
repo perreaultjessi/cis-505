@@ -2,74 +2,128 @@
 /*Krasso, R., (2021). CIS 505 Intermediate Java Programming. Bellevue University, all rights reserved*/
 /*Payne, D., (2021). CSD 405 Intermediate Java Programming. Bellevue University, all rights reserved.*/
 
+package Assignment8;
+
 import javafx.application.Application;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-public class PerreaultFutureValueApp extends Application 
-{
+public class PerreaultEnhancedValueApp extends Application {
 
-    private TextField txtInvestmentAmount = new TextField();
-    private TextField txtYears = new TextField();
-    private TextArea txtFutureValue = new TextArea();
-    private Label lblMonthlyPayment = new Label("Monthly Payment:");
-    private Label lblInterestRate = new Label("Interest Rate:");
-    private Label lblInterestRateFormat = new Label("");
-    private ComboBox<Integer> cmbInterestRate = new ComboBox<>();
-    private Button btnCalculate = new Button("Calculate");
-    private Button btnClear = new Button("Clear");
+    //UI
+    private TextField txtMonthlyPayment;
+    private TextField txtInterestRate;
+    private ComboBox<Integer> cbYears;
+    private Button btnCalculate;
+    private Button btnClear;
+    private TextArea txtResults;
+    private Label lblFutureValueDate;
+
+    public static void main(String[] args) {
+        launch(args);
+    }
 
     @Override
     public void start(Stage primaryStage) {
-        //GridPane
-        GridPane pane = new GridPane();
-        pane.setAlignment(Pos.CENTER);
-        pane.setPadding(new Insets(11.5, 12.5, 13.5, 14.5));
-        pane.setHgap(5.5);
-        pane.setVgap(5.5);
+        //initialize UI
+        primaryStage.setTitle("Future Value Calculator");
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(20, 20, 20, 20));
+        grid.setVgap(10);
+        grid.setHgap(10);
 
-        //GridPane controls
-        pane.add(new Label("Investment Amount:"), 0, 0);
-        pane.add(txtInvestmentAmount, 1, 0);
-        pane.add(new Label("Years:"), 0, 1);
-        pane.add(txtYears, 1, 1);
-        pane.add(lblMonthlyPayment, 0, 2);
-        pane.add(txtFutureValue, 1, 2);
-        pane.add(lblInterestRate, 0, 3);
-        pane.add(cmbInterestRate, 1, 3);
-        lblInterestRateFormat.setTextFill(Color.RED);
-        pane.add(lblInterestRateFormat, 1, 4);
-        GridPane.setHalignment(lblInterestRateFormat, HPos.RIGHT);
+        //monthly payment label
+        Label lblMonthlyPayment = new Label("Monthly Payment:");
+        GridPane.setConstraints(lblMonthlyPayment, 0, 0);
 
-        //HBox
-        HBox actionBtnContainer = new HBox();
-        actionBtnContainer.setPadding(new Insets(15, 0, 15, 30));
-        actionBtnContainer.setSpacing(10);
-        actionBtnContainer.getChildren().add(btnClear);
-        actionBtnContainer.getChildren().add(btnCalculate);
+        //monthly payment text field
+        txtMonthlyPayment = new TextField();
+        GridPane.setConstraints(txtMonthlyPayment, 1, 0);
 
-        //addHBox to GridPane
-        pane.add(actionBtnContainer, 1, 5);
+        //interest label
+        Label lblInterestRate = new Label("Interest Rate (%):");
+        GridPane.setConstraints(lblInterestRate, 0, 1);
 
-        //primary stage
-        primaryStage.setTitle("Perreault Future Value App");
-        primaryStage.setScene(new Scene(pane, 400, 300));
+        //interest text field
+        txtInterestRate = new TextField();
+        GridPane.setConstraints(txtInterestRate, 1, 1);
+
+        //years label
+        Label lblYears = new Label("Years:");
+        GridPane.setConstraints(lblYears, 0, 2);
+
+        //yearscombobox
+        cbYears = new ComboBox<>();
+        cbYears.getItems().addAll(1, 2, 3, 4, 5);
+        cbYears.setValue(0); // Default value
+        GridPane.setConstraints(cbYears, 1, 2);
+
+        //calc button
+        btnCalculate = new Button("Calculate");
+        btnCalculate.setOnAction(e -> calculateResults());
+        GridPane.setConstraints(btnCalculate, 0, 3);
+
+        //clear button
+        btnClear = new Button("Clear");
+        btnClear.setOnAction(e -> clearFormFields());
+        GridPane.setConstraints(btnClear, 1, 3);
+
+        //results text
+        txtResults = new TextArea();
+        txtResults.setEditable(false);
+        txtResults.setPrefRowCount(5);
+        GridPane.setConstraints(txtResults, 0, 4, 2, 1);
+
+        //FV date label
+        lblFutureValueDate = new Label();
+        GridPane.setConstraints(lblFutureValueDate, 0, 5, 2, 1);
+
+        grid.getChildren().addAll(lblMonthlyPayment, txtMonthlyPayment,
+                lblInterestRate, txtInterestRate,
+                lblYears, cbYears,
+                btnCalculate, btnClear,
+                txtResults, lblFutureValueDate);
+
+        Scene scene = new Scene(grid, 400, 300);
+        primaryStage.setScene(scene);
         primaryStage.show();
     }
 
-    public static void main(String[] args) 
-    {
-        launch(args);
+    //method to clear form fields
+    private void clearFormFields() {
+        txtMonthlyPayment.setText("");
+        txtInterestRate.setText("");
+        txtResults.setText("");
+        lblFutureValueDate.setText("");
+        cbYears.setValue(0);
+    }
+
+    //method for calculation
+    private void calculateResults() {
+        try {
+            double monthlyPayment = Double.parseDouble(txtMonthlyPayment.getText());
+            double rate = Double.parseDouble(txtInterestRate.getText());
+            int years = cbYears.getValue();
+
+            double futureValue = FinanceCalculator.calculateFutureValue(monthlyPayment, rate, years);
+            txtResults.setText("The future value is " + futureValue);
+
+            // Set the date
+            String currentDate = getTodayDate();
+            lblFutureValueDate.setText("Calculation as of " + currentDate);
+        } catch (NumberFormatException e) {
+            txtResults.setText("Enter valid numeric values.");
+        }
+    }
+
+    //method to get current date
+    private String getTodayDate() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy");
+        return dateFormat.format(new Date());
     }
 }
