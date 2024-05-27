@@ -5,28 +5,39 @@
 package GradeBookApp;
 
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
-public class PerreaultGradeBookApp extends Application
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class PerreaultGradeBookApp extends Application 
 {
-    public static void main(String[] args)
+    private TextField firstNameField;
+    private TextField lastNameField;
+    private TextField courseField;
+    private ComboBox<String> gradeComboBox;
+    private TextArea gradeDisplayArea;
+
+    public static void main(String[] args) 
     {
         launch(args);
     }
 
     @Override
-    public void start(Stage primaryStage)
+    public void start(Stage primaryStage) 
     {
         primaryStage.setTitle("Grade Book Application");
 
-        //create layout and scene
+        // Create layout and scene
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(20));
 
-        //add form fields and buttons
+        // Add form fields and buttons
         layout.getChildren().addAll(createFormFields(), createButtons(), createGradeDisplayArea());
 
         Scene scene = new Scene(layout, 400, 400);
@@ -34,27 +45,27 @@ public class PerreaultGradeBookApp extends Application
         primaryStage.show();
     }
 
-    private GridPane createFormFields()
+    private GridPane createFormFields() 
     {
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
 
-        //labels and textfields
+        // Labels and textfields
         Label firstNameLabel = new Label("First Name: ");
-        TextField firstNameField = new TextField();
+        firstNameField = new TextField();
 
         Label lastNameLabel = new Label("Last Name: ");
-        TextField lastNameField = new TextField();
+        lastNameField = new TextField();
 
         Label courseLabel = new Label("Course: ");
-        TextField courseField = new TextField();
+        courseField = new TextField();
 
         Label gradeLabel = new Label("Grade: ");
-        ComboBox<String> gradeComboBox = new ComboBox<>();
+        gradeComboBox = new ComboBox<>();
         gradeComboBox.getItems().addAll("A", "B", "C", "D", "E", "F");
 
-        //add to gridpane
+        // Add to gridpane
         grid.add(firstNameLabel, 0, 0);
         grid.add(firstNameField, 1, 0);
         grid.add(lastNameLabel, 0, 1);
@@ -67,15 +78,15 @@ public class PerreaultGradeBookApp extends Application
         return grid;
     }
 
-    private HBox createButtons()
+    private HBox createButtons() 
     {
         HBox buttonBox = new HBox(10);
-
+        
         Button clearButton = new Button("Clear");
         Button saveButton = new Button("Save");
         Button viewGradesButton = new Button("View Grades");
 
-        //event handlers will go here
+        // Event handlers
         clearButton.setOnAction(e -> clearForm());
         saveButton.setOnAction(e -> saveEntry());
         viewGradesButton.setOnAction(e -> viewGrades());
@@ -84,26 +95,90 @@ public class PerreaultGradeBookApp extends Application
         return buttonBox;
     }
 
-    private TextArea createGradeDisplayArea()
+    private TextArea createGradeDisplayArea() 
     {
-        TextArea gradeDisplayArea = new TextArea();
+        gradeDisplayArea = new TextArea();
         gradeDisplayArea.setEditable(false);
         gradeDisplayArea.setPrefHeight(200);
         return gradeDisplayArea;
     }
 
-    private void clearForm()
+    private void clearForm() 
     {
-        //logic will go here
+        firstNameField.clear();
+        lastNameField.clear();
+        courseField.clear();
+        gradeComboBox.getSelectionModel().clearSelection();
     }
 
-    private void saveEntry()
+    private void saveEntry() 
     {
-        //logic will go here
+        String firstName = firstNameField.getText();
+        String lastName = lastNameField.getText();
+        String course = courseField.getText();
+        String grade = gradeComboBox.getValue();
+
+        if (firstName.isEmpty() || lastName.isEmpty() || course.isEmpty() || grade == null) 
+        {
+            showAlert("Error", "Please complete student fields and enter a grade.");
+            return;
+        }
+
+        Student student = new Student(firstName, lastName, course, grade);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("grades.csv", true))) 
+        {
+            File file = new File("grades.csv");
+            if (file.length() == 0) 
+            {
+                writer.write("firstName,lastName,course,grade");
+                writer.newLine();
+            }
+            writer.write(student.toCSV());
+            writer.newLine();
+            showAlert("Success", "Grade saved.");
+            clearForm();
+        } catch (IOException e) 
+        {
+            showAlert("Error", "An error occurred. Grade not saved.");
+            e.printStackTrace();
+        }
     }
 
-    private void viewGrades()
+    private void viewGrades() 
     {
-        //logic will go here
+        List<Student> students = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader("grades.csv"))) 
+        {
+            String line;
+            reader.readLine(); // Skip header row
+            while ((line = reader.readLine()) != null) 
+            {
+                String[] data = line.split(",");
+                if (data.length == 4) 
+                {
+                    students.add(new Student(data[0], data[1], data[2], data[3]));
+                }
+            }
+        } 
+        catch (IOException e) 
+        {
+            showAlert("Error", "An error occurred. Grades not read");
+            e.printStackTrace();
+        }
+
+        StringBuilder displayText = new StringBuilder();
+        for (Student student : students) 
+        {
+            displayText.append(student.toString()).append("\n");
+        }
+        gradeDisplayArea.setText(displayText.toString());
+    }
+
+    private void showAlert(String title, String message) 
+    {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }
