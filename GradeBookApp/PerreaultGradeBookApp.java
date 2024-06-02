@@ -22,6 +22,9 @@ public class PerreaultGradeBookApp extends Application
     private TextField courseField;
     private ComboBox<String> gradeComboBox;
     private TextArea gradeDisplayArea;
+    private Label statusMessage;
+
+    private static final String FILE_PATH = "grades.csv";
 
     public static void main(String[] args) 
     {
@@ -33,12 +36,10 @@ public class PerreaultGradeBookApp extends Application
     {
         primaryStage.setTitle("Grade Book Application");
 
-        // Create layout and scene
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(20));
 
-        // Add form fields and buttons
-        layout.getChildren().addAll(createFormFields(), createButtons(), createGradeDisplayArea());
+        layout.getChildren().addAll(createFormFields(), createButtons(), createGradeDisplayArea(), createStatusMessage());
 
         Scene scene = new Scene(layout, 400, 400);
         primaryStage.setScene(scene);
@@ -51,7 +52,7 @@ public class PerreaultGradeBookApp extends Application
         grid.setHgap(10);
         grid.setVgap(10);
 
-        // Labels and textfields
+        //labels and textfields
         Label firstNameLabel = new Label("First Name: ");
         firstNameField = new TextField();
 
@@ -65,7 +66,6 @@ public class PerreaultGradeBookApp extends Application
         gradeComboBox = new ComboBox<>();
         gradeComboBox.getItems().addAll("A", "B", "C", "D", "E", "F");
 
-        // Add to gridpane
         grid.add(firstNameLabel, 0, 0);
         grid.add(firstNameField, 1, 0);
         grid.add(lastNameLabel, 0, 1);
@@ -86,7 +86,7 @@ public class PerreaultGradeBookApp extends Application
         Button saveButton = new Button("Save");
         Button viewGradesButton = new Button("View Grades");
 
-        // Event handlers
+        //event handlers
         clearButton.setOnAction(e -> clearForm());
         saveButton.setOnAction(e -> saveEntry());
         viewGradesButton.setOnAction(e -> viewGrades());
@@ -103,12 +103,19 @@ public class PerreaultGradeBookApp extends Application
         return gradeDisplayArea;
     }
 
+    private Label createStatusMessage() 
+    {
+        statusMessage = new Label();
+        return statusMessage;
+    }
+
     private void clearForm() 
     {
         firstNameField.clear();
         lastNameField.clear();
         courseField.clear();
         gradeComboBox.getSelectionModel().clearSelection();
+        statusMessage.setText("Form cleared.");
     }
 
     private void saveEntry() 
@@ -118,39 +125,72 @@ public class PerreaultGradeBookApp extends Application
         String course = courseField.getText();
         String grade = gradeComboBox.getValue();
 
-        if (firstName.isEmpty() || lastName.isEmpty() || course.isEmpty() || grade == null) 
+        if (isValidInput(firstName, lastName, course, grade)) 
         {
-            showAlert("Error", "Please complete student fields and enter a grade.");
-            return;
-        }
-
-        Student student = new Student(firstName, lastName, course, grade);
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("grades.csv", true))) 
-        {
-            File file = new File("grades.csv");
-            if (file.length() == 0) 
+            Student student = new Student(firstName, lastName, course, grade);
+            if (saveToFile(student)) 
             {
+                statusMessage.setText("Grade saved successfully.");
+                clearForm();
+            } else 
+            {
+                statusMessage.setText("An error occurred. Grade not saved.");
+            }
+        } else 
+        {
+            statusMessage.setText("Please fill all fields.");
+        }
+    }
+
+    private boolean isValidInput(String firstName, String lastName, String course, String grade) 
+    {
+        return !(firstName.isEmpty() || lastName.isEmpty() || course.isEmpty() || grade == null);
+    }
+
+    private boolean saveToFile(Student student) 
+    {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH, true))) 
+        {
+            File file = new File(FILE_PATH);
+            if (file.length() == 0) {
                 writer.write("firstName,lastName,course,grade");
                 writer.newLine();
             }
             writer.write(student.toCSV());
             writer.newLine();
-            showAlert("Success", "Grade saved.");
-            clearForm();
+            return true;
         } catch (IOException e) 
         {
-            showAlert("Error", "An error occurred. Grade not saved.");
             e.printStackTrace();
+            return false;
         }
     }
 
     private void viewGrades() 
     {
+        List<Student> students = readFromFile();
+
+        if (students != null) 
+        {
+            StringBuilder displayText = new StringBuilder();
+            for (Student student : students) 
+            {
+                displayText.append(student.toString()).append("\n");
+            }
+            gradeDisplayArea.setText(displayText.toString());
+            statusMessage.setText("Grades displayed.");
+        } else {
+            statusMessage.setText("An error occurred. Grades not read.");
+        }
+    }
+
+    private List<Student> readFromFile() 
+    {
         List<Student> students = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader("grades.csv"))) 
+        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH))) 
         {
             String line;
-            reader.readLine(); // Skip header row
+            reader.readLine();
             while ((line = reader.readLine()) != null) 
             {
                 String[] data = line.split(",");
@@ -159,19 +199,12 @@ public class PerreaultGradeBookApp extends Application
                     students.add(new Student(data[0], data[1], data[2], data[3]));
                 }
             }
-        } 
-        catch (IOException e) 
+        } catch (IOException e) 
         {
-            showAlert("Error", "An error occurred. Grades not read");
             e.printStackTrace();
+            return null;
         }
-
-        StringBuilder displayText = new StringBuilder();
-        for (Student student : students) 
-        {
-            displayText.append(student.toString()).append("\n");
-        }
-        gradeDisplayArea.setText(displayText.toString());
+        return students;
     }
 
     private void showAlert(String title, String message) 
