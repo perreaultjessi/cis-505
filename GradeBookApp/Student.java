@@ -4,70 +4,61 @@
 
 package GradeBookApp;
 
-public class Student
-{
+public class Student {
     private String firstName;
     private String lastName;
     private String course;
     private String grade;
 
-    public Student()
-    {
-        //default constructor
+    public Student() {
+        //default constr
     }
 
-    public Student(String firstName, String lastName, String course, String grade)
-    {
+    public Student(String firstName, String lastName, String course, String grade) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.course = course;
         this.grade = grade;
     }
 
-    public String getFirstName()
-    {
+    public String getFirstName() {
         return firstName;
     }
 
-    public void setFirstName(String firstName)
-    {
+    public void setFirstName(String firstName) {
         this.firstName = firstName;
     }
 
-    public String getLastName()
-    {
+    public String getLastName() {
         return lastName;
     }
 
-    public void setLastName(String lastName)
-    {
+    public void setLastName(String lastName) {
         this.lastName = lastName;
     }
 
-    public String getCourse()
-    {
+    public String getCourse() {
         return course;
     }
 
-    public void setCourse(String course)
-    {
+    public void setCourse(String course) {
         this.course = course;
     }
 
-    public String getGrade()
-    {
+    public String getGrade() {
         return grade;
     }
 
-    public void setGrade(String grade)
-    {
+    public void setGrade(String grade) {
         this.grade = grade;
     }
 
-    @Override
-    public String toString()
-    {
-        return firstName + ", " + lastName + ", " + course + ", " + grade;
+    public String toCSV() {
+        return firstName + "," + lastName + "," + course + "," + grade;
     }
 
+    @Override
+    public String toString() {
+        return firstName + ", " + lastName + ", " + course + ", " + grade;
+    }
 }
